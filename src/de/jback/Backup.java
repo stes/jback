@@ -1,6 +1,7 @@
 package de.jback;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Stack;
 
 public final class Backup {
@@ -8,7 +9,7 @@ public final class Backup {
 	public static void main(String[] args) {
 		LinearFileIndex index = new LinearFileIndex();
 
-		Backup b = new Backup("/data/docs", "/data/docs", index);
+		Backup b = new Backup(new File("/data/docs"), new File("/data/docs"), index);
 
 		long starttime = System.currentTimeMillis();
 
@@ -24,28 +25,28 @@ public final class Backup {
 		System.out.printf("needed %d ms\n", System.currentTimeMillis()
 				- starttime);
 
-		index.write(new File("index2.txt"));
+		index.write(new File("index3.txt"));
 		
 		LinearFileIndex index_old = new LinearFileIndex();
-		index_old.read(new File("index.txt"));
+		index_old.read(new File("index2.txt"));
 		
 		LinearFileIndex diff = index.diff(index_old);
 		
 		diff.write(new File("diff.txt"));
 	}
 
-	private final String _backupDir;
-	private final String _sourceDir;
-	private final FileIndex _index;
+	private final File _backupDir;
+	private final File _sourceDir;
+	private final LinearFileIndex _index;
 
-	public Backup(String backupDir, String sourceDir, FileIndex index) {
+	public Backup(File backupDir, File sourceDir, LinearFileIndex index) {
 		_backupDir = backupDir;
 		_sourceDir = sourceDir;
 		_index = index;
 	}
 
 	public void updateIndex() {
-		File root = new File(_sourceDir);
+		File root = _sourceDir;
 
 		Stack<File> filestack = new Stack<File>();
 		filestack.push(root);
@@ -59,18 +60,22 @@ public final class Backup {
 						filestack.push(f);
 					}
 				} else {
-					_index.add(file);
+					_index.addDirectory(file.getAbsolutePath());
 				}
 			} else {
-				_index.add(file);
+				try {
+					_index.addFile(file.getAbsolutePath(), Tools.SHA1Hash(file.getAbsolutePath()));
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 	}
 
-	public void updateIndexRecursively() {
-		File root = new File(_sourceDir);
-		updateIndexRecursively(root, 0);
-	}
+//	public void updateIndexRecursively() {
+//		File root = _sourceDir;
+//		updateIndexRecursively(root, 0);
+//	}
 
 	public void updateIndexRecursively(File root, int level) {
 		File[] files = root.listFiles();
@@ -85,6 +90,11 @@ public final class Backup {
 	}
 
 	public void writeBackup() {
+		throw new UnsupportedOperationException("Not implemented yet.");
+	}
+	
+	public LinearFileIndex getLastBackup()
+	{
 		throw new UnsupportedOperationException("Not implemented yet.");
 	}
 }

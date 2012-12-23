@@ -9,9 +9,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class Tools {
-	private static final int CHUNK_SIZE = 512;
+	private static final int CHUNK_SIZE = 4096;
 
-	public String SHA1Hash(String file) throws IOException {
+	public static String SHA1Hash(String file) throws IOException {
 		try {
 			MessageDigest md = MessageDigest.getInstance("SHA1");
 			FileInputStream filestream = new FileInputStream(file);
@@ -40,21 +40,27 @@ public class Tools {
 		}
 	}
 
-	public static void copyToZIP(String[] files, String output)
+	public static void copyToZIP(LinearFileIndex index, String[] files, String[] dirs, String output)
 			throws IOException {
 		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(output));
 
 		byte[] buf = new byte[CHUNK_SIZE];
+		for (String dir : dirs) {
+			String entry = dir.replace(":", "");
+			if (!entry.endsWith("/")) {
+				entry += "/";
+			}
+			out.putNextEntry(new ZipEntry(entry));
+		}
+
 		for (String file : files) {
 			out.putNextEntry(new ZipEntry(file.replace(":", "")));
-			if (!file.endsWith("/")) {
-				FileInputStream in = new FileInputStream(file);
-				int read;
-				while ((read = in.read(buf)) > 0) {
-					out.write(buf, 0, read);
-				}
-				in.close();
+			FileInputStream in = new FileInputStream(file);
+			int read;
+			while ((read = in.read(buf)) > 0) {
+				out.write(buf, 0, read);
 			}
+			in.close();
 		}
 		out.close();
 	}

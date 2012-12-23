@@ -21,25 +21,15 @@ public class LinearFileIndex extends FileIndex {
 		_directories = new ArrayList<String>();
 	}
 
-	@Override
-	public void add(File f) {
-		if (f.isDirectory()) {
-			this.addDirectory(f.getAbsolutePath());
-		} else {
-			this.add(f.getAbsolutePath(), Tools.SHA1Hash(f.getAbsolutePath()));
-		}
-	}
-
 	public void addDirectory(String s)
 	{
 		_directories.add(s);
 	}
 	
-	public void add(String s, String hash) {
+	public void addFile(String s, String hash) {
 		_files.put(s, hash);
 	}
 
-	@Override
 	public String search(File f) {
 		return this.search(f.getAbsolutePath());
 	}
@@ -68,10 +58,10 @@ public class LinearFileIndex extends FileIndex {
 			String hash = index.search(file);
 			if (hash != "") {
 				if (!hash.equals(this.search(file))) {
-					result.add(file, this.search(file));
+					result.addFile(file, this.search(file));
 				}
 			} else {
-				result.add(file, this.search(file));
+				result.addFile(file, this.search(file));
 			}
 		}
 		// add dirs
@@ -84,7 +74,6 @@ public class LinearFileIndex extends FileIndex {
 		return result;
 	}
 
-	@Override
 	public void write(File f) {
 		try {
 			BufferedWriter sr = new BufferedWriter(new FileWriter(f));
@@ -111,7 +100,6 @@ public class LinearFileIndex extends FileIndex {
 		}
 	}
 
-	@Override
 	public void read(File f) {
 		try {
 			BufferedReader sr = new BufferedReader(new FileReader(f));
@@ -136,9 +124,12 @@ public class LinearFileIndex extends FileIndex {
 		}
 	}
 
-	@Override
-	public String[] toArray() {
+	public String[] files() {
 		return this._files.values().toArray(new String[] {});
+	}
+	
+	public String[] directories() {
+		return this._directories.toArray(new String[] {});
 	}
 
 }
