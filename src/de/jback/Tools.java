@@ -1,9 +1,12 @@
 package de.jback;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class Tools {
 	private static final int CHUNK_SIZE = 512;
@@ -35,5 +38,24 @@ public class Tools {
 			e.printStackTrace();
 			return "";
 		}
+	}
+
+	public static void copyToZIP(String[] files, String output)
+			throws IOException {
+		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(output));
+
+		byte[] buf = new byte[CHUNK_SIZE];
+		for (String file : files) {
+			out.putNextEntry(new ZipEntry(file.replace(":", "")));
+			if (!file.endsWith("/")) {
+				FileInputStream in = new FileInputStream(file);
+				int read;
+				while ((read = in.read(buf)) > 0) {
+					out.write(buf, 0, read);
+				}
+				in.close();
+			}
+		}
+		out.close();
 	}
 }
