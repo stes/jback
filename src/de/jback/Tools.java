@@ -40,7 +40,7 @@ public class Tools {
 		}
 	}
 
-	public static void copyToZIP(LinearFileIndex index, String[] files, String[] dirs, String output)
+	public static void copyToZIP(String[] files, String[] dirs, String output)
 			throws IOException {
 		ZipOutputStream out = new ZipOutputStream(new FileOutputStream(output));
 

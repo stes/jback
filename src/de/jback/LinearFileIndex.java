@@ -7,10 +7,14 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 public class LinearFileIndex extends FileIndex {
+
+	public static final String SEPERATOR_PATH_HASH = "##";
 
 	private HashMap<String, String> _files;
 	private ArrayList<String> _directories;
@@ -21,20 +25,31 @@ public class LinearFileIndex extends FileIndex {
 		_directories = new ArrayList<String>();
 	}
 
-	public void addDirectory(String s)
-	{
+	public boolean isEmpty() {
+		return _files.isEmpty();
+	}
+
+	public void removeFile(String path) {
+		_files.remove(path);
+	}
+
+	public void removeDirectory(String path) {
+		_directories.remove(path);
+	}
+
+	public void addDirectory(String s) {
 		_directories.add(s);
 	}
-	
+
 	public void addFile(String s, String hash) {
 		_files.put(s, hash);
 	}
 
-	public String search(File f) {
-		return this.search(f.getAbsolutePath());
+	public String getHash(File f) {
+		return this.getHash(f.getAbsolutePath());
 	}
 
-	public String search(String s) {
+	public String getHash(String s) {
 		if (_files.containsKey(s))
 			return _files.get(s);
 		return "";
@@ -42,6 +57,10 @@ public class LinearFileIndex extends FileIndex {
 
 	public boolean hasDirectory(String s) {
 		return _directories.contains(s);
+	}
+
+	public boolean hasFile(String s) {
+		return _files.containsKey(s);
 	}
 
 	/**
@@ -55,13 +74,13 @@ public class LinearFileIndex extends FileIndex {
 		LinearFileIndex result = new LinearFileIndex();
 		// add files
 		for (String file : _files.keySet()) {
-			String hash = index.search(file);
+			String hash = index.getHash(file);
 			if (hash != "") {
-				if (!hash.equals(this.search(file))) {
-					result.addFile(file, this.search(file));
+				if (!hash.equals(this.getHash(file))) {
+					result.addFile(file, this.getHash(file));
 				}
 			} else {
-				result.addFile(file, this.search(file));
+				result.addFile(file, this.getHash(file));
 			}
 		}
 		// add dirs
@@ -74,31 +93,39 @@ public class LinearFileIndex extends FileIndex {
 		return result;
 	}
 
+	public void write(OutputStream stream) {
+		BufferedWriter sw = new BufferedWriter(new OutputStreamWriter(stream));
+		this.write(sw);
+	}
+
 	public void write(File f) {
 		try {
-			BufferedWriter sr = new BufferedWriter(new FileWriter(f));
-
-			for (String dir : this._directories) {
-				sr.write(dir + "\n");
-			}
-			sr.flush();
-
-			sr.write("!\n");
-
-			for (String path : this._files.keySet()) {
-				sr.write(path + "##" + this.search(path) + "\n");
-			}
-			sr.flush();
-
-			sr.close();
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
+			BufferedWriter sw = new BufferedWriter(new FileWriter(f));
+			this.write(sw);
+			sw.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	protected void write(BufferedWriter writer) {
+		for (String dir : this._directories) {
+			try {
+				writer.write(dir + "\n");
+				writer.flush();
+				writer.write("!\n");
+				for (String path : this._files.keySet()) {
+					writer.write(path + SEPERATOR_PATH_HASH
+							+ this.getHash(path) + "\n");
+				}
+				writer.flush();
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	public void read(File f) {
 		try {
 			BufferedReader sr = new BufferedReader(new FileReader(f));
@@ -110,7 +137,7 @@ public class LinearFileIndex extends FileIndex {
 			}
 			for (String line = sr.readLine(); line != null; line = sr
 					.readLine()) {
-				String[] parts = line.split("##");
+				String[] parts = line.split(SEPERATOR_PATH_HASH);
 				this._files.put(parts[0], parts[1]);
 			}
 
@@ -126,7 +153,7 @@ public class LinearFileIndex extends FileIndex {
 	public String[] files() {
 		return this._files.keySet().toArray(new String[] {});
 	}
-	
+
 	public String[] directories() {
 		return this._directories.toArray(new String[] {});
 	}

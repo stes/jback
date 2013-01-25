@@ -9,7 +9,7 @@ public final class Backup {
 	public static void main(String[] args) {
 		LinearFileIndex index = new LinearFileIndex();
 
-		Backup b = new Backup(new File("/data/docs"), new File("/data/docs"), index);
+		Backup b = new Backup(new File("/data/docs"), new File("/data/docs"), index, 0);
 
 		long starttime = System.currentTimeMillis();
 
@@ -34,15 +34,54 @@ public final class Backup {
 		
 		diff.write(new File("diff.txt"));
 	}
+	
+	public static boolean existsBackup(File backupDir, int n)
+	{
+		return new File(backupDir, getBackupName(n)).exists();
+	}
 
 	private final File _backupDir;
 	private final File _sourceDir;
 	private final LinearFileIndex _index;
+	private final int _number;
+	
+	public Backup(File backupDir, File sourceDir, LinearFileIndex index, int n) {
 
-	public Backup(File backupDir, File sourceDir, LinearFileIndex index) {
 		_backupDir = backupDir;
 		_sourceDir = sourceDir;
 		_index = index;
+		_number = n;
+	}
+	
+	public LinearFileIndex getIndex()
+	{
+		return _index;
+	}
+	
+	public Backup(File backupDir, File sourceDir, int n)
+	{		
+		this(backupDir, sourceDir, new LinearFileIndex(), n);
+		_index.read(new File(_backupDir, this.getIndexName()));
+	}
+	
+	public static String getBackupName(int n)
+	{
+		return "backup_" + n + ".zip";
+	}
+	
+	public static  String getIndexName(int n)
+	{
+		return ".index_" + n;
+	}
+	
+	public String getBackupName()
+	{
+		return Backup.getBackupName(_number);
+	}
+	
+	public String getIndexName()
+	{
+		return Backup.getIndexName(_number);
 	}
 
 	public void updateIndex() {
@@ -90,11 +129,7 @@ public final class Backup {
 	}
 
 	public void writeBackup() throws IOException {
-		Tools.copyToZIP(_index, _index.files(), _index.directories(), new File(_backupDir, "backup.zip").getAbsolutePath());
-	}
-	
-	public LinearFileIndex getLastBackup()
-	{
-		throw new UnsupportedOperationException("Not implemented yet.");
+		Tools.copyToZIP(_index.files(), _index.directories(), new File(_backupDir, this.getBackupName()).getAbsolutePath());
+		_index.write(new File(_backupDir, this.getIndexName()));
 	}
 }
