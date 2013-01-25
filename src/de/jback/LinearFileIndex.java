@@ -40,7 +40,7 @@ public class LinearFileIndex extends FileIndex {
 		return "";
 	}
 
-	public boolean has_directory(String s) {
+	public boolean hasDirectory(String s) {
 		return _directories.contains(s);
 	}
 
@@ -66,7 +66,7 @@ public class LinearFileIndex extends FileIndex {
 		}
 		// add dirs
 		for (String dir : _directories) {
-			if (!index.has_directory(dir)) {
+			if (!index.hasDirectory(dir)) {
 				result.addDirectory(dir);
 			}
 		}
@@ -95,7 +95,6 @@ public class LinearFileIndex extends FileIndex {
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -125,7 +124,7 @@ public class LinearFileIndex extends FileIndex {
 	}
 
 	public String[] files() {
-		return this._files.values().toArray(new String[] {});
+		return this._files.keySet().toArray(new String[] {});
 	}
 	
 	public String[] directories() {

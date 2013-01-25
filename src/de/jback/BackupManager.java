@@ -1,6 +1,5 @@
 package de.jback;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -9,6 +8,21 @@ import java.util.Properties;
 
 public class BackupManager {
 	
+	public static void main(String[] args)
+	{
+		BackupManager backman = BackupManager.getInstance("/data/code/projects/Java/jBack/testing/backup");
+		Backup backup = backman.createNewBackup();
+		backup.updateIndex();
+		try {
+			backup.writeBackup();
+			System.out.println("Backup finished successfully!");
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
 	private static Properties getProps(String backupDir)
 	{
 		Properties props = new Properties();
@@ -16,20 +30,15 @@ public class BackupManager {
 		FileReader fr;
 		try {
 			fr = new FileReader(f);
-			
 			props.load(fr);
-			
 			fr.close();
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		return props;
-		
 	}
 	
 	/**
@@ -74,7 +83,7 @@ public class BackupManager {
 	{
 		LinearFileIndex index = new LinearFileIndex();
 		Backup backup = new Backup(_backupDir, _sourceDir, index);
-		
+		_backupCount++;
 		return backup;
 	}
 }

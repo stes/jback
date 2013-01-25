@@ -89,8 +89,8 @@ public final class Backup {
 		}
 	}
 
-	public void writeBackup() {
-		throw new UnsupportedOperationException("Not implemented yet.");
+	public void writeBackup() throws IOException {
+		Tools.copyToZIP(_index, _index.files(), _index.directories(), new File(_backupDir, "backup.zip").getAbsolutePath());
 	}
 	
 	public LinearFileIndex getLastBackup()
