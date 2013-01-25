@@ -12,8 +12,7 @@ public class BackupManager {
 	public static void main(String[] args) {
 
 		BackupManager backman = BackupManager.getInstance(
-				"/data/code/projects/Java/jBack/testing/backup",
-				"/data/code/projects/Java/jBack/testing/src");
+				"/data/code/projects/Java/jBack/testing/backup");
 		Backup backup = backman.createNewBackup();
 		backup.updateIndex();
 		try {
@@ -114,24 +113,45 @@ public class BackupManager {
 	public Backup createNewBackup() {
 		LinearFileIndex index = new LinearFileIndex();
 		_backupCount++;
-		Backup backup = new Backup(_backupDir, _sourceDir, index, _backupCount);
+		Backup backup = new Backup(_backupDir, _sourceDir, getIndex(_backupCount-1), _backupCount);
 		return backup;
 	}
 
+	public LinearFileIndex getIndex(int number)
+	{
+		LinearFileIndex last_index = new LinearFileIndex();
+		last_index.read(new File(_backupDir, Backup.getIndexName(number)));
+		return last_index;
+	}
+	
 	public Backup getBackup(int number) {
-		LinearFileIndex index = new LinearFileIndex();
-		Backup backup = new Backup(_backupDir, _sourceDir, number);
+		Backup backup = new Backup(_backupDir, _sourceDir, getIndex(number-1), number);
 		return backup;
 	}
 
 	public void performRecovery() {
 		LinearFileIndex index = this.getBackup(_backupCount).getIndex();
+		try
+		{
 		for (int n = _backupCount; !index.isEmpty() && n >= 0; n++) {
 			if (Backup.existsBackup(_backupDir, n)) {
 				Backup backup = getBackup(n);
-				Tools.copyFromZip(index,
-						new File(_backupDir, backup.getBackupName()));
+				Tools.copyFromZIP(index,
+						new File(_backupDir, backup.getBackupName()).getAbsolutePath(), "testing");
 			}
 		}
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			if (!index.isEmpty())
+			{
+				// TODO: throw adequate exception
+				throw new UnsupportedOperationException("Not implemented yet.");
+			}
+		}
+		
 	}
 }

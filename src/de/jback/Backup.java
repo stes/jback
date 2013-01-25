@@ -43,14 +43,21 @@ public final class Backup {
 	private final File _backupDir;
 	private final File _sourceDir;
 	private final LinearFileIndex _index;
+	private final LinearFileIndex _lastIndex;
 	private final int _number;
 	
-	public Backup(File backupDir, File sourceDir, LinearFileIndex index, int n) {
+	public Backup(
+			File backupDir,
+			File sourceDir,
+			LinearFileIndex index,
+			LinearFileIndex lastIndex,
+			int n) {
 
 		_backupDir = backupDir;
 		_sourceDir = sourceDir;
 		_index = index;
 		_number = n;
+		_lastIndex = lastIndex;
 	}
 	
 	public LinearFileIndex getIndex()
@@ -58,9 +65,9 @@ public final class Backup {
 		return _index;
 	}
 	
-	public Backup(File backupDir, File sourceDir, int n)
+	public Backup(File backupDir, File sourceDir, LinearFileIndex last_index, int n)
 	{		
-		this(backupDir, sourceDir, new LinearFileIndex(), n);
+		this(backupDir, sourceDir, new LinearFileIndex(), last_index, n);
 		_index.read(new File(_backupDir, this.getIndexName()));
 	}
 	
@@ -129,7 +136,12 @@ public final class Backup {
 	}
 
 	public void writeBackup() throws IOException {
-		Tools.copyToZIP(_index.files(), _index.directories(), new File(_backupDir, this.getBackupName()).getAbsolutePath());
+		LinearFileIndex index = _index;
+		if (_lastIndex != null)
+		{
+			index = index.diff(_lastIndex);
+		}
+		Tools.copyToZIP(index, new File(_backupDir, this.getBackupName()).getAbsolutePath());
 		_index.write(new File(_backupDir, this.getIndexName()));
 	}
 }
