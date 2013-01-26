@@ -2,6 +2,9 @@ package de.jback;
 
 import java.io.IOException;
 
+import de.jback.LinearFileIndex;
+import de.jback.Tools;
+
 public class ZIPTest {
 	public static void main(String[] args) {
 		try {

@@ -7,22 +7,26 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Properties;
 
+/*
+ * TODO:
+ * 
+ * recovery: wipe all & recover vs. hash all & recover vs. diff & overwrite
+ */
+
 public class BackupManager {
 
 	public static void main(String[] args) {
 
-		BackupManager backman = BackupManager.getInstance(
-				"/data/code/projects/Java/jBack/testing/backup");
-		Backup backup = backman.createNewBackup();
-		backup.updateIndex();
-		try {
-			backup.writeBackup();
-			System.out.println("Backup finished successfully!");
-		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			backman.close();
-		}
+		BackupManager backman = BackupManager.getInstance("testing/backup", "testing/data");
+//		try {
+//			backman.performBackup();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		} finally {
+//			backman.close();
+//		}
+
+		backman.performRecovery();
 	}
 
 	private static Properties getProps(String backupDir) {
@@ -47,8 +51,7 @@ public class BackupManager {
 		FileWriter fw;
 		try {
 			fw = new FileWriter(f);
-			props.store(fw,
-					"jBack Property File. Do not change anything by hand!");
+			props.store(fw, "jBack Property File. Do not change anything by hand!");
 			fw.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -86,6 +89,9 @@ public class BackupManager {
 		props.setProperty("number", "0");
 
 		if (!fileBackup.isDirectory() || fileBackup.listFiles().length > 0) {
+			if (new File(backupDir, ".source").exists()) {
+				return getInstance(backupDir);
+			}
 			throw new IllegalArgumentException("Choose an empty directory.");
 		}
 
@@ -110,48 +116,54 @@ public class BackupManager {
 		BackupManager.saveProps(_props, _backupDir.getAbsolutePath());
 	}
 
-	public Backup createNewBackup() {
-		LinearFileIndex index = new LinearFileIndex();
-		_backupCount++;
-		Backup backup = new Backup(_backupDir, _sourceDir, getIndex(_backupCount-1), _backupCount);
-		return backup;
-	}
-
-	public LinearFileIndex getIndex(int number)
-	{
+	public LinearFileIndex getIndex(int number) {
+		if (_backupCount == 0 || !(new File(_backupDir, Backup.getIndexName(number)).exists())) {
+			return null;
+		}
 		LinearFileIndex last_index = new LinearFileIndex();
 		last_index.read(new File(_backupDir, Backup.getIndexName(number)));
 		return last_index;
 	}
-	
+
 	public Backup getBackup(int number) {
-		Backup backup = new Backup(_backupDir, _sourceDir, getIndex(number-1), number);
+		Backup backup = new Backup(_backupDir, _sourceDir, getIndex(number - 1), number);
 		return backup;
+	}
+
+	public void performBackup() throws IOException{
+		LinearFileIndex lastIndex = getIndex(_backupCount);
+		Backup backup = new Backup(_backupDir, _sourceDir, new LinearFileIndex(), lastIndex, _backupCount + 1);
+		backup.updateIndex();
+		try {
+			backup.writeBackup();
+			_backupCount++;
+		} catch (IOException e) {
+			throw e;
+		}
 	}
 
 	public void performRecovery() {
 		LinearFileIndex index = this.getBackup(_backupCount).getIndex();
-		try
-		{
-		for (int n = _backupCount; !index.isEmpty() && n >= 0; n++) {
-			if (Backup.existsBackup(_backupDir, n)) {
-				Backup backup = getBackup(n);
-				Tools.copyFromZIP(index,
-						new File(_backupDir, backup.getBackupName()).getAbsolutePath(), "testing");
+		try {
+			for (int n = _backupCount; !index.isEmpty() && n >= 0; n--) {
+				if (Backup.existsBackup(_backupDir, n)) {
+					System.out.println("blubb");
+					Backup backup = getBackup(n);
+					Tools.copyFromZIP(index, new File(_backupDir, backup.getBackupName()).getAbsolutePath(), "testing/recovery/");
+				}
 			}
-		}
-		} catch (IOException e)
-		{
+		} catch (IOException e) {
 			e.printStackTrace();
-		}
-		finally
-		{
-			if (!index.isEmpty())
-			{
+		} finally {
+			if (!index.isEmpty()) {
 				// TODO: throw adequate exception
+				for (String s : index.directories())
+				{
+					System.out.println(s);
+				}
 				throw new UnsupportedOperationException("Not implemented yet.");
 			}
 		}
-		
+
 	}
 }

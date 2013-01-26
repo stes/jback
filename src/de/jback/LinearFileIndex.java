@@ -26,15 +26,18 @@ public class LinearFileIndex extends FileIndex {
 	}
 
 	public boolean isEmpty() {
-		return _files.isEmpty();
+		return _files.isEmpty() && _directories.isEmpty();
 	}
 
 	public void removeFile(String path) {
 		_files.remove(path);
 	}
 
-	public void removeDirectory(String path) {
-		_directories.remove(path);
+	public void removeDirectory(String s) {
+		if (s.endsWith("/")) {
+			s = s.substring(0, s.length() - 1);
+		}
+		_directories.remove(s);
 	}
 
 	public void addDirectory(String s) {
@@ -56,6 +59,9 @@ public class LinearFileIndex extends FileIndex {
 	}
 
 	public boolean hasDirectory(String s) {
+		if (s.endsWith("/")) {
+			s = s.substring(0, s.length() - 1);
+		}
 		return _directories.contains(s);
 	}
 
@@ -93,9 +99,10 @@ public class LinearFileIndex extends FileIndex {
 		return result;
 	}
 
-	public void write(OutputStream stream) {
+	public void write(OutputStream stream) throws IOException {
 		BufferedWriter sw = new BufferedWriter(new OutputStreamWriter(stream));
 		this.write(sw);
+		sw.close();
 	}
 
 	public void write(File f) {
@@ -109,34 +116,30 @@ public class LinearFileIndex extends FileIndex {
 	}
 
 	protected void write(BufferedWriter writer) {
-		for (String dir : this._directories) {
-			try {
+		try {
+			for (String dir : this._directories) {
 				writer.write(dir + "\n");
 				writer.flush();
-				writer.write("!\n");
-				for (String path : this._files.keySet()) {
-					writer.write(path + SEPERATOR_PATH_HASH
-							+ this.getHash(path) + "\n");
-				}
-				writer.flush();
-
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
+			writer.write("!\n");
+			for (String path : this._files.keySet()) {
+				writer.write(path + SEPERATOR_PATH_HASH + this.getHash(path) + "\n");
+			}
+			writer.flush();
+
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
-	
+
 	public void read(File f) {
 		try {
 			BufferedReader sr = new BufferedReader(new FileReader(f));
 
-			for (String line = sr.readLine(); !line.contains("!"); line = sr
-					.readLine()) {
+			for (String line = sr.readLine(); !line.contains("!"); line = sr.readLine()) {
 				this._directories.add(line);
-				System.out.println(line);
 			}
-			for (String line = sr.readLine(); line != null; line = sr
-					.readLine()) {
+			for (String line = sr.readLine(); line != null; line = sr.readLine()) {
 				String[] parts = line.split(SEPERATOR_PATH_HASH);
 				this._files.put(parts[0], parts[1]);
 			}
